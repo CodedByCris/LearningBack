@@ -4,8 +4,6 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/user",
                    tags=["user"],
                    responses={404: {"message": "Not found"}})
-
-# Inicia el server: uvicorn users:app --reload
  
 # Entidad user
 class User(BaseModel):
