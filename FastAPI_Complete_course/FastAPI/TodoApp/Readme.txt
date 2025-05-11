@@ -31,6 +31,17 @@ delete from todos where id = 4;
 Podemos modificar la vista del select con el comando .mode column, .mode markdown , .mode box, .mode table, etc.
 Siendo .mode table el mejor
 
+Utilizamos el Router para poder escalar la app de una manera muy sencilla
+
+Para hashear las contraseñas instalamos los siguientes paquetes "passlib" y "bcrypt". Ambas deben de tener compatibilidad entre sus versiones
+Ejemplo: 
+PASSLIB -> 1.7.4
+BCRYPT -> 4.0.1  (pip install bcrypt==4.0.1)
+
+pip install python-multipart para hacer OAuth2PasswordRequestForm
+
+Para los jwt necesitamos instalar jose -> pip install "python-jose[cryptography]"
+Para la SECRET_KEY, nos vamos a la consola y escribimos openssl rand -hex 32 (nos genera una cadena de texto)
 
 IMPORTANTE
 En caso de tener 2 env por error, eliminar una con rm -rf nombre
