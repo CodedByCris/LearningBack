@@ -1,13 +1,34 @@
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends
 from typing import Annotated
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from pydantic import BaseModel
+from models import Users
+from passlib.context import CryptContext
+from database import SessionLocal
+from sqlalchemy.orm import Session
 from starlette import status
-from models import Todos
-from database import SessionLocal, engine
+from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt
 
 router = APIRouter()
 
+SECRET_KEY = "1eda56e2b116bf90db4528c73977b88491463e4e81c54872b7df34ea87655db8"
+ALGORITHM = "HS256"
+
+bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        
+class CreateUserRequest(BaseModel):
+    username: str
+    email: str
+    first_name: str
+    last_name: str 
+    password: str
+    role: str
+    
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    
 # Inicializa la base de datos antes de la llamada y la cierra después de la llamada
 def get_db():
     db = SessionLocal()
@@ -19,47 +40,45 @@ def get_db():
 #La función depende de que se abra la base de datos y se cierre después de la llamada
 db_dependency = Annotated[Session, Depends(get_db)]
 
-class TodoRequest(BaseModel):
-    title: str = Field(min_length = 3)
-    description: str = Field(min_length = 3, max_length = 100)
-    priority: int = Field(gt=0, lt=6)
-    completed: bool
-        
-@router.get("/")
-async def read_all(db: db_dependency):
-    return db.query(Todos).all()
+def authenticate_user(db, username: str, password: str):
+    user = db.query(Users).filter(Users.username == username).first()
+    if not user:
+        return False
+    if not bcrypt_context.verify(password, user.hashed_password): # Verifica la contraseña, convierte la contraseña en hash y la compara con la contraseña ya hasheada en la base de datos
+        return False
+    return user
 
-@router.get("/todo/{todo_id}", status_code=status.HTTP_200_OK)
-async def read_todo( db: db_dependency,todo_id: int = Path(gt=0)):
-    todo_model = db.query(Todos).filter(Todos.id == todo_id).first()
-    if todo_model is None:
-        raise HTTPException(status_code=404, detail="Todo not found")
-    return todo_model
+def create_access_token(username: str, user_id: int, expires_delta: timedelta):
+    encode = {"sub": username,"id": user_id,}
+    expires = datetime.now(timezone.utc) + expires_delta
+    encode.update({"exp": expires})
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post("/todo", status_code=status.HTTP_201_CREATED)
-async def create_todo(db: db_dependency, todo: TodoRequest):
-    todo_model = Todos(**todo.model_dump())
-    db.add(todo_model)
+@router.post("/auth", status_code=status.HTTP_201_CREATED)
+async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
+    
+    create_user_request = Users(
+        email=create_user_request.email,
+        username=create_user_request.username,
+        first_name=create_user_request.first_name,
+        last_name=create_user_request.last_name,
+        role=create_user_request.role,
+        hashed_password=bcrypt_context.hash(create_user_request.password), # Hash the password 
+        is_active=True,
+    )
+    
+    db.add(create_user_request)
     db.commit()
-    db.refresh(todo_model)
-    return todo_model
-
-@router.put("/todo/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def update_todo(db: db_dependency, todo_request: TodoRequest, todo_id: int = Path(gt=0)):
-    todo_model = db.query(Todos).filter(Todos.id == todo_id).first()
-    if todo_model is None:
-        raise HTTPException(status_code=404, detail="Todo not found")
-    for key, value in todo_request.model_dump().items():
-        setattr(todo_model, key, value)
-    db.commit()
-    db.refresh(todo_model)
-    return todo_model
-
-@router.delete("/todo/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_todo(db: db_dependency, todo_id: int = Path(gt=0)):
-    todo_model = db.query(Todos).filter(Todos.id == todo_id).first()
-    if todo_model is None:
-        raise HTTPException(status_code=404, detail="Todo not found")
-    db.delete(todo_model)
-    db.commit()
-    return todo_model
+    
+    
+@router.post("/token", response_model=Token) # OAuth2PasswordRequestForm obliga al cliente a enviar el username y password en el body
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        return {"error": "Invalid credentials"}
+    token = create_access_token(
+        user.username,
+        user.id,
+        expires_delta=timedelta(minutes=20) # El token expira en 20 minutos
+    )
+    return {"access_token": token, "token_type": "bearer"}
