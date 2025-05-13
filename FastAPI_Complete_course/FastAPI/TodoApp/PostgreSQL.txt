@@ -1,0 +1,36 @@
+Hemos utilizado SQLITE3 para crear nuestra pequeña base de datos local, la cual puede servir para pequeñas aplicaciones
+
+A partir de ahora, utilizaremos PostgreSQL, que es una base de datos de produccion, úlil para todo tipo de apps.
+Para ello nos la descargamos desde su página oficial. La app se llama PGAdmin4
+
+// CONFIGURACIÓN DE PostgreSQL
+1 - Click derecho en servers, new servers
+2 - Ponemos un nombre en general y en connection - address, localhost
+3 - Escribimos la contraseña
+//
+
+Creamos una nueva base de datos
+Las tablas se encuentran en Schemas - Tables
+
+Creamos las tablas por codigo
+
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users 
+(
+	id SERIAL,
+	email varchar(200) DEFAULT NULL,
+	username varchar(45) DEFAULT NULL,
+	first_name varchar(45) DEFAULT NULL,
+	last_name varchar(45) DEFAULT NULL,
+	hashed_password varchar(200) DEFAULT NULL,
+	is_active boolean DEFAULT NULL,
+	role varchar(45) DEFAULT NULL,
+	PRIMARY KEY(id)
+);
+
+Para conectar la base de datos con fastAPI:
+* pip install psycopg2-binary
+
+Agregamos la URL a la base de datos de PostgreSQL
+Modificamos el engine
