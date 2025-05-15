@@ -36,7 +36,7 @@ async def get_user(user: user_dependency, db: db_dependency):
     return db.query(Users).filter(Users.user_id == user["id"]).first()
 
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
-async  def change_password(user: user_dependency, db: db_dependency, user_verification: UserVerification):
+async def change_password(user: user_dependency, db: db_dependency, user_verification: UserVerification):
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     
@@ -46,5 +46,16 @@ async  def change_password(user: user_dependency, db: db_dependency, user_verifi
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error on password change")
     
     user_model.hashed_password = bcrypt_context.hash(user_verification.new_password)
+    db.add(user_model)
+    db.commit()
+    
+@router.put("/phone_number/{phone_number}", status_code=status.HTTP_204_NO_CONTENT)
+async def change_phone_number(user: user_dependency, db: db_dependency, phone_number: str):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
+    user_model = db.query(Users).filter(Users.user_id == user["id"]).first()
+        
+    user_model.phone_number = phone_number
     db.add(user_model)
     db.commit()

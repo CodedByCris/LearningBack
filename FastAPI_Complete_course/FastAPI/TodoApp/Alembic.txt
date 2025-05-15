@@ -1,0 +1,38 @@
+Vamos a utilizar Alembic para poder modificar los esquemas de nuestra base de datos. Permite, por ejemplo, agregar una columna
+a una tabla  sin necesidad de eliminarla y volver a crearla
+
+SOLO SE UTILIZA PARA TABLAS YA CREADAS, LAS QUE NO ESTÁN CREADAS LAS GENERA sqlalchemy AUTOMÁTICAMENTE
+
+pip install alembic
+
+Entre los comandos de alembic tenemos
+
+alembic init <folder name> -> Inicializa un environmet
+alembic revision -m <message> -> Envía una revisión del environment
+alembic upgrade <revision #> -> Ejecuta la actualización de la migración de nuestra bbdd
+alembic downgrade -1 ->Ejecuta la desactualización de la migración de nuestra bbdd
+
+Después de ejecutar alembic init, debemos modificar varios archivos
+
+En env.py:
+* Quitamos la linea -> if config.config_file_name is not None:
+* Importamos los models
+* Cambiamos el target_metadata por -> models.Base.metadata
+
+En alembic.ini
+* Asignamos la url de nuestra base de datos a la variable sqlalchemy.url
+
+Ejemplo de su funcionalidad, vamos a crear una nueva columna a la tabla users
+
+* alembic revision -m "Create phone number for user column"
+* Nos crea una revisión, que es un archivo python que espera las llamadas
+* Agregamos el codigo correspondiente ->
+    def upgrade() -> None:
+        op.add_column("users", sa.Column("phone_number", sa.String(), nullable=True))
+* Una vez completado hacemos el upgrade
+* alembic upgrade (revision id) -> alembic upgrade 4c214364d556
+
+En esta misma revisión, podemos preparar un downgrade, como en este ejemplo
+def downgrade() -> None:
+    op.drop_column("users", "phone_number")
+Al cual llamaremos mediante -> alembic downgrade -1
