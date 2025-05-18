@@ -3,11 +3,15 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from starlette import status
-from models import Todos
-from database import SessionLocal
+from ..models import Todos
+from ..database import SessionLocal
 from .auth import get_current_user
 
-router = APIRouter()
+
+
+router = APIRouter(    
+    prefix="/todos",
+    tags=["todos"])
 
 # Inicializa la base de datos antes de la llamada y la cierra después de la llamada
 def get_db():

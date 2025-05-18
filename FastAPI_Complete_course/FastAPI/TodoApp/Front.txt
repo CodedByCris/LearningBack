@@ -1,0 +1,4 @@
+Creamos una carpeta templates donde irá nuestro código HTML
+
+Ejecutamos pip install aiofiles
+Ejecutamos pip install jinja2

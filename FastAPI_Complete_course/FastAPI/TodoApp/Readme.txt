@@ -51,3 +51,8 @@ Busca y selecciona Python: Select Interpreter.
 Elige el intérprete dentro de .venv.
 
 Si agregamos /docs en nuestra URL, podemos ver el swagger
+
+Para los tests instalamos pytest, creamos un directorio test, y todos los archivos a testear con test_x.py
+Si nos da un error de httpx, le hacemos pip install httpx
+
+Para hacer tests de funciones asíncronas, necesitamos hacer pip install pytest-asyncio
