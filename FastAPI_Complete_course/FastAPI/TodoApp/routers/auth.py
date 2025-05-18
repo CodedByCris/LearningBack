@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import Annotated
 from pydantic import BaseModel
 from ..models import Users
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
+from fastapi.templating import Jinja2Templates
 
 router = APIRouter(
     prefix="/auth",
@@ -44,6 +45,8 @@ def get_db():
         
 #La función depende de que se abra la base de datos y se cierre después de la llamada
 db_dependency = Annotated[Session, Depends(get_db)]
+
+templates = Jinja2Templates(directory="TodoApp/templates")
 
 def authenticate_user(db, username: str, password: str):
     user = db.query(Users).filter(Users.username == username).first()
